@@ -1,26 +1,92 @@
 (function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
+//const nearestPoint = require('@turf/nearest-point').default;
+const distance = require('@turf/distance').default;
+const {point, featureCollection} = require('@turf/helpers');
+//const {featureEach} = require('@turf/meta');
+
 /*
- * Hi there,
- * Please, PLEASE do not re-use this token in your own projects or anywhere else.
- * I personally pay out of my own pocket for my Mapbox account, and do it to make a nice demo for
- * Leaflet Routing Machine, not to fund other projects.
- *
- * Please get your own Mapbox account if you like their maps, it's not that expensive.
- * I and the other contributors to Leaflet Routing Machine give it and its source away for free,
- * stealing this key from me to save a few bucks feels a bit cheap, to be honest.
- */
+const vertices = _pathFinder._graph.vertices;
+const _points = featureCollection(Object.keys(vertices)
+  .filter(nodeName => Object.keys(vertices[nodeName]).length)
+  .map(nodeName => point(_pathFinder._graph.sourceVertices[nodeName])));
+
+const origin = nearestPoint(originPoint, this._points);
+const leg = _pathFinder.findPath(origin, dest);
+if (leg === null || leg.path.length < 2) {
+  return;
+}
+*/
 module.exports = {
-  apiToken: 'pk.eyJ1IjoibGllZG1hbiIsImEiOiJjazIweGloNHAxOWZkM2NxZ3YyaHhtNXJ6In0._Hw--m4ilmGxw0YR39vmYA'
+  genczml: function (leg) {
+    const epochms = Date.now();
+    const user = mkczml1('user', leg.path, epochms, 'https://gist.githubusercontent.com/deton/f14f9ee2040bbbd452211d7071db03b5/raw/78240fd3be9662240b947d2f19a8ac7b1f0c454e/walk.glb', 0);
+    const arr = user.position.cartographicDegrees;
+    const endtm = arr[arr.length - 4];
+    const availendms = epochms + endtm * 1000;
+    const intervalstr = user.position.epoch + '/' + (new Date(availendms).toISOString());
+    const czml = [{
+      id: 'document',
+      name: 'name',
+      version: '1.0',
+      clock: {
+        interval: intervalstr,
+        currentTime: user.position.epoch,
+        multiplier: 20
+      },
+    }];
+    czml.push(user);
+    return czml;
+  }
 };
 
-console.log("                    ___\n                _.-'   ```'--.._                 _____ ___ ___   ____  _____ __ __      ______  __ __    ___  \n              .'                `-._            / ___/|   |   | /    |/ ___/|  |  |    |      ||  |  |  /  _] \n             /                      `.         (   \\_ | _   _ ||  o  (   \\_ |  |  |    |      ||  |  | /  [_        \n            /                         `.        \\__  ||  \\_/  ||     |\\__  ||  _  |    |_|  |_||  _  ||    _]       \n           /                            `.      /  \\ ||   |   ||  _  |/  \\ ||  |  |      |  |  |  |  ||   [_        \n          :       (                       \\     \\    ||   |   ||  |  |\\    ||  |  |      |  |  |  |  ||     |       \n          |    (   \\_                  )   `.    \\___||___|___||__|__| \\___||__|__|      |__|  |__|__||_____|       \n          |     \\__/ '.               /  )  ;  \n          |   (___:    \\            _/__/   ;    ____   ____  ______  ____   ____   ____  ____      __  __ __  __ __ \n          :       | _  ;          .'   |__) :   |    \\ /    ||      ||    \\ |    | /    ||    \\    /  ]|  |  ||  |  |\n           :      |` \\ |         /     /   /    |  o  )  o  ||      ||  D  ) |  | |  o  ||  D  )  /  / |  |  ||  |  |\n            \\     |_  ;|        /`\\   /   /     |   _/|     ||_|  |_||    /  |  | |     ||    /  /  /  |  _  ||  ~  |\n             \\    ; ) :|       ;_  ; /   /      |  |  |  _  |  |  |  |    \\  |  | |  _  ||    \\ /   \\_ |  |  ||___, |\n              \\_  .-''-.       | ) :/   /       |  |  |  |  |  |  |  |  .  \\ |  | |  |  ||  .  \\\\     ||  |  ||     |\n             .-         `      .--.'   /        |__|  |__|__|  |__|  |__|\\_||____||__|__||__|\\_| \\____||__|__||____/ \n            :         _.----._     `  < \n            :       -'........'-       `.\n             `.        `''''`           ;\n               `'-.__                  ,'\n                     ``--.   :'-------'\n                         :   :\n                        .'   '.\n      \n      \n                                                                    ");
+function mkczml1(id, path, epochms, gltfurl, altitude) {
+  const speed = 0.1 + Math.random() * 3; // [m/s]
+  const arr = [];
+  let tm = 0;
+  path.forEach((p, i, ps) => {
+    if (i > 0) {
+      // XXX: key of compactedVertices is not path[i]
+      //const cost = pathFinder._graph.compactedVertices['' + ps[i-1]]['' + p];
+      const d = distance(point(ps[i-1]), point(p)); // [km]
+      tm += d * 1000 / speed;
+    }
+    arr.push(Math.round(tm)); // seconds from epoch
+    arr.push(p[0]); // longitude
+    arr.push(p[1]); // latitude
+    arr.push(altitude);
+  });
+  const availendms = epochms + tm * 1000;
+  const epochstr = new Date(epochms).toISOString();
+  const availability = epochstr + '/' + (new Date(availendms).toISOString());
+  return {
+    id,
+    availability,
+    model: {
+      show: true,
+      gltf: gltfurl,
+      scale: 1,
+      minimumPixelSize: 1,
+      heightReference: 'CLAMP_TO_GROUND'
+    },
+    orientation: {
+      velocityReference: '#position'
+    },
+    path: {
+      show: false,
+      resolution: 1.0
+    },
+    position: {
+      epoch: epochstr,
+      cartographicDegrees: arr
+    }
+  };
+}
 
-},{}],2:[function(require,module,exports){
+},{"@turf/distance":3,"@turf/helpers":6}],2:[function(require,module,exports){
 var L = require('leaflet'),
     Router = require('./router'),
-    extent = require('turf-extent');
-    lineDistance = require('@turf/line-distance'),
-    config = require('./config');
+    extent = require('turf-extent'),
+    lineDistance = require('@turf/line-distance');
 
 L.Icon.Default.imagePath = 'images/';
 
@@ -29,9 +95,8 @@ require('leaflet-routing-machine');
 
 var map = L.map('map');
 
-L.tileLayer('https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/{z}/{x}/{y}{r}?access_token={token}', {
-        attribution: "© <a href='https://www.mapbox.com/about/maps/'>Mapbox</a> © <a href='http://www.openstreetmap.org/copyright'>OpenStreetMap</a> <strong><a href='https://www.mapbox.com/map-feedback/' target='_blank'>Improve this map</a></strong>",
-        token: config.apiToken
+L.tileLayer('https://tile.openstreetmap.jp/styles/osm-bright/512/{z}/{x}/{y}.png', {
+        attribution: '<a href="https://www.openmaptiles.org/" target="_blank">&copy; OpenMapTiles</a> <a href="https://www.openstreetmap.org/copyright" target="_blank">&copy; OpenStreetMap contributors</a>'
     })
     .addTo(map);
 
@@ -51,6 +116,7 @@ xhr.send();
 
 function initialize(network) {
     var bbox = extent(network);
+    console.log('bbox', bbox);
     var bounds = L.latLngBounds([bbox[1], bbox[0]], [bbox[3], bbox[2]]);
     map.fitBounds(bounds);
 
@@ -70,8 +136,8 @@ function initialize(network) {
         }).addTo(map);
 
     control.setWaypoints([
-        [57.740, 11.99],
-        [57.68, 11.90],
+        [35.6982, 139.7727],
+        [35.6994, 139.7698],
     ]);
 
     var totalDistance = network.features.reduce(function(total, feature) {
@@ -118,7 +184,7 @@ function initialize(network) {
     }, { position: 'bottomright'}).addTo(map);
 }
 
-},{"./config":1,"./router":29,"@turf/line-distance":8,"leaflet":21,"leaflet-routing-machine":19,"leaflet.icon.glyph":20,"turf-extent":24}],3:[function(require,module,exports){
+},{"./router":29,"@turf/line-distance":8,"leaflet":21,"leaflet-routing-machine":19,"leaflet.icon.glyph":20,"turf-extent":24}],3:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var invariant_1 = require("@turf/invariant");
@@ -38111,9 +38177,10 @@ module.exports = function(targetPoint, points){
 var L = require("leaflet"),
   PathFinder = require("geojson-path-finder").default,
   util = require("./util"),
+  genczml = require("./genczml"),
   nearest = require("turf-nearest"),
   distance = require("@turf/distance").default,
-  point = require("@turf/helpers").point,
+  {point, lineString} = require("@turf/helpers"),
   featurecollection = require("turf-featurecollection");
 
 require("leaflet-routing-machine");
@@ -38172,7 +38239,7 @@ module.exports = L.Class.extend({
   initialize: function (geojson) {
     this._pathFinder = new PathFinder(geojson, {
       tolerance: 1e-9,
-      weight: weightFn,
+      //weight: weightFn,
     });
     var vertices = this._pathFinder.graph.vertices;
     this._points = featurecollection(
@@ -38232,6 +38299,23 @@ module.exports = L.Class.extend({
       return sum + legDistance;
     }, 0);
 
+    //console.log('find route result', legs);
+    console.log('GeoJSON LineString',
+      lineString(Array.prototype.concat.apply(
+        [],
+        legs.map(function (l) {
+          return l.path;
+        })
+      )));
+    console.log('CZML', genczml.genczml({
+      path: Array.prototype.concat.apply(
+        [],
+        legs.map(function (l) {
+          return l.path;
+        })
+      )
+    }));
+
     cb.call(context, null, [
       {
         name: "",
@@ -38255,7 +38339,7 @@ module.exports = L.Class.extend({
   },
 });
 
-},{"./util":30,"@turf/distance":3,"@turf/helpers":6,"geojson-path-finder":15,"leaflet":21,"leaflet-routing-machine":19,"turf-featurecollection":25,"turf-nearest":28}],30:[function(require,module,exports){
+},{"./genczml":1,"./util":30,"@turf/distance":3,"@turf/helpers":6,"geojson-path-finder":15,"leaflet":21,"leaflet-routing-machine":19,"turf-featurecollection":25,"turf-nearest":28}],30:[function(require,module,exports){
 var L = require('leaflet');
 
 module.exports = {

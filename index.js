@@ -1,8 +1,7 @@
 var L = require('leaflet'),
     Router = require('./router'),
-    extent = require('turf-extent');
-    lineDistance = require('@turf/line-distance'),
-    config = require('./config');
+    extent = require('turf-extent'),
+    lineDistance = require('@turf/line-distance');
 
 L.Icon.Default.imagePath = 'images/';
 
@@ -11,9 +10,8 @@ require('leaflet-routing-machine');
 
 var map = L.map('map');
 
-L.tileLayer('https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/{z}/{x}/{y}{r}?access_token={token}', {
-        attribution: "© <a href='https://www.mapbox.com/about/maps/'>Mapbox</a> © <a href='http://www.openstreetmap.org/copyright'>OpenStreetMap</a> <strong><a href='https://www.mapbox.com/map-feedback/' target='_blank'>Improve this map</a></strong>",
-        token: config.apiToken
+L.tileLayer('https://tile.openstreetmap.jp/styles/osm-bright/512/{z}/{x}/{y}.png', {
+        attribution: '<a href="https://www.openmaptiles.org/" target="_blank">&copy; OpenMapTiles</a> <a href="https://www.openstreetmap.org/copyright" target="_blank">&copy; OpenStreetMap contributors</a>'
     })
     .addTo(map);
 
@@ -33,6 +31,7 @@ xhr.send();
 
 function initialize(network) {
     var bbox = extent(network);
+    console.log('bbox', bbox);
     var bounds = L.latLngBounds([bbox[1], bbox[0]], [bbox[3], bbox[2]]);
     map.fitBounds(bounds);
 
@@ -52,8 +51,8 @@ function initialize(network) {
         }).addTo(map);
 
     control.setWaypoints([
-        [57.740, 11.99],
-        [57.68, 11.90],
+        [35.6982, 139.7727],
+        [35.6994, 139.7698],
     ]);
 
     var totalDistance = network.features.reduce(function(total, feature) {

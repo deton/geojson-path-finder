@@ -1,9 +1,10 @@
 var L = require("leaflet"),
   PathFinder = require("geojson-path-finder").default,
   util = require("./util"),
+  genczml = require("./genczml"),
   nearest = require("turf-nearest"),
   distance = require("@turf/distance").default,
-  point = require("@turf/helpers").point,
+  {point, lineString} = require("@turf/helpers"),
   featurecollection = require("turf-featurecollection");
 
 require("leaflet-routing-machine");
@@ -62,7 +63,7 @@ module.exports = L.Class.extend({
   initialize: function (geojson) {
     this._pathFinder = new PathFinder(geojson, {
       tolerance: 1e-9,
-      weight: weightFn,
+      //weight: weightFn,
     });
     var vertices = this._pathFinder.graph.vertices;
     this._points = featurecollection(
@@ -121,6 +122,23 @@ module.exports = L.Class.extend({
       }, 0);
       return sum + legDistance;
     }, 0);
+
+    //console.log('find route result', legs);
+    console.log('GeoJSON LineString',
+      lineString(Array.prototype.concat.apply(
+        [],
+        legs.map(function (l) {
+          return l.path;
+        })
+      )));
+    console.log('CZML', genczml.genczml({
+      path: Array.prototype.concat.apply(
+        [],
+        legs.map(function (l) {
+          return l.path;
+        })
+      )
+    }));
 
     cb.call(context, null, [
       {
