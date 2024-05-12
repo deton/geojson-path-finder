@@ -137,7 +137,10 @@ module.exports = L.Class.extend({
         legs.map(function (l) {
           return l.path;
         })
-      )
+      ),
+      gltfurl: 'https://gist.githubusercontent.com/deton/f14f9ee2040bbbd452211d7071db03b5/raw/78240fd3be9662240b947d2f19a8ac7b1f0c454e/walk.glb',
+      altitude: 2,
+      addPolyline: true,
     }));
 
     cb.call(context, null, [
