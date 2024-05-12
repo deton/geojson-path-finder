@@ -1,10 +1,9 @@
 var L = require("leaflet"),
   PathFinder = require("geojson-path-finder").default,
   util = require("./util"),
-  genczml = require("./genczml"),
   nearest = require("turf-nearest"),
   distance = require("@turf/distance").default,
-  {point, lineString} = require("@turf/helpers"),
+  {point} = require("@turf/helpers"),
   featurecollection = require("turf-featurecollection");
 
 require("leaflet-routing-machine");
@@ -124,24 +123,12 @@ module.exports = L.Class.extend({
     }, 0);
 
     //console.log('find route result', legs);
-    console.log('GeoJSON LineString',
-      lineString(Array.prototype.concat.apply(
-        [],
-        legs.map(function (l) {
-          return l.path;
-        })
-      )));
-    console.log('CZML', genczml.genczml({
-      path: Array.prototype.concat.apply(
-        [],
-        legs.map(function (l) {
-          return l.path;
-        })
-      ),
-      gltfurl: 'https://gist.githubusercontent.com/deton/f14f9ee2040bbbd452211d7071db03b5/raw/78240fd3be9662240b947d2f19a8ac7b1f0c454e/walk.glb',
-      altitude: 2,
-      addPolyline: true,
-    }));
+    this._lastPath = Array.prototype.concat.apply(
+      [],
+      legs.map(function (l) {
+        return l.path;
+      })
+    );
 
     cb.call(context, null, [
       {

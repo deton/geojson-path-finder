@@ -1,6 +1,8 @@
 var L = require('leaflet'),
     Router = require('./router'),
+    genczml = require("./genczml"),
     extent = require('turf-extent'),
+    {lineString} = require("@turf/helpers"),
     lineDistance = require('@turf/line-distance');
 
 L.Icon.Default.imagePath = 'images/';
@@ -51,8 +53,8 @@ function initialize(network) {
         }).addTo(map);
 
     control.setWaypoints([
-        [35.6982, 139.7727],
-        [35.6994, 139.7698],
+        [35.6983, 139.7725],
+        [35.6994, 139.7700],
     ]);
 
     var totalDistance = network.features.reduce(function(total, feature) {
@@ -97,4 +99,39 @@ function initialize(network) {
     L.control.layers(null, {
         'Routing Network': networkLayer
     }, { position: 'bottomright'}).addTo(map);
+
+    const exportGeojsonElem = document.getElementById("exportGeojson");
+    exportGeojsonElem.addEventListener("click", () => {
+        const path = getPath();
+        console.log('GeoJSON LineString', lineString(path));
+        exportGeojsonElem.href = 'data:application/json,' + encodeURIComponent(JSON.stringify(lineString(path)));
+        exportGeojsonElem.download = 'path.geojson';
+    });
+
+    const exportCzmlElem = document.getElementById("exportCzml");
+    exportCzmlElem.addEventListener("click", () => {
+        const path = getPath();
+        const height = +document.getElementById("czmlHeight").value;
+        const czml = genczml.genczml({
+            path: path,
+            gltfurl: 'https://gist.githubusercontent.com/deton/f14f9ee2040bbbd452211d7071db03b5/raw/78240fd3be9662240b947d2f19a8ac7b1f0c454e/walk.glb',
+            altitude: height,
+            addPolyline: true,
+        });
+        console.log('CZML', czml);
+        exportCzmlElem.href = 'data:application/json,' + encodeURIComponent(JSON.stringify(czml));
+        exportCzmlElem.download = 'path.czml';
+    });
+
+    function getPath() {
+        // add origin and dest that may not on network.json
+        const waypoints = control.getWaypoints();
+        const origin = waypoints[0];
+        const dest = waypoints.at(-1);
+        return [
+            [origin.latLng.lng, origin.latLng.lat],
+            ...router._lastPath,
+            [dest.latLng.lng, dest.latLng.lat]
+        ];
+    }
 }

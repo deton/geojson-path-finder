@@ -82,10 +82,10 @@ function modelpos2polyline(czml1) {
   return {
     id: `polyline-${czml1.id}`,
     polyline: {
+      clampToGround: true,
       positions: {
         cartographicDegrees: czml1.position.cartographicDegrees.filter((x, idx) => idx % 4 !== 0)
       },
-      clampToGround: true,
     }
   };
 }
@@ -93,7 +93,9 @@ function modelpos2polyline(czml1) {
 },{"@turf/distance":3,"@turf/helpers":6}],2:[function(require,module,exports){
 var L = require('leaflet'),
     Router = require('./router'),
+    genczml = require("./genczml"),
     extent = require('turf-extent'),
+    {lineString} = require("@turf/helpers"),
     lineDistance = require('@turf/line-distance');
 
 L.Icon.Default.imagePath = 'images/';
@@ -144,8 +146,8 @@ function initialize(network) {
         }).addTo(map);
 
     control.setWaypoints([
-        [35.6982, 139.7727],
-        [35.6994, 139.7698],
+        [35.6983, 139.7725],
+        [35.6994, 139.7700],
     ]);
 
     var totalDistance = network.features.reduce(function(total, feature) {
@@ -190,9 +192,44 @@ function initialize(network) {
     L.control.layers(null, {
         'Routing Network': networkLayer
     }, { position: 'bottomright'}).addTo(map);
+
+    const exportGeojsonElem = document.getElementById("exportGeojson");
+    exportGeojsonElem.addEventListener("click", () => {
+        const path = getPath();
+        console.log('GeoJSON LineString', lineString(path));
+        exportGeojsonElem.href = 'data:application/json,' + encodeURIComponent(JSON.stringify(lineString(path)));
+        exportGeojsonElem.download = 'path.geojson';
+    });
+
+    const exportCzmlElem = document.getElementById("exportCzml");
+    exportCzmlElem.addEventListener("click", () => {
+        const path = getPath();
+        const height = +document.getElementById("czmlHeight").value;
+        const czml = genczml.genczml({
+            path: path,
+            gltfurl: 'https://gist.githubusercontent.com/deton/f14f9ee2040bbbd452211d7071db03b5/raw/78240fd3be9662240b947d2f19a8ac7b1f0c454e/walk.glb',
+            altitude: height,
+            addPolyline: true,
+        });
+        console.log('CZML', czml);
+        exportCzmlElem.href = 'data:application/json,' + encodeURIComponent(JSON.stringify(czml));
+        exportCzmlElem.download = 'path.czml';
+    });
+
+    function getPath() {
+        // add origin and dest that may not on network.json
+        const waypoints = control.getWaypoints();
+        const origin = waypoints[0];
+        const dest = waypoints.at(-1);
+        return [
+            [origin.latLng.lng, origin.latLng.lat],
+            ...router._lastPath,
+            [dest.latLng.lng, dest.latLng.lat]
+        ];
+    }
 }
 
-},{"./router":29,"@turf/line-distance":8,"leaflet":21,"leaflet-routing-machine":19,"leaflet.icon.glyph":20,"turf-extent":24}],3:[function(require,module,exports){
+},{"./genczml":1,"./router":29,"@turf/helpers":6,"@turf/line-distance":8,"leaflet":21,"leaflet-routing-machine":19,"leaflet.icon.glyph":20,"turf-extent":24}],3:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var invariant_1 = require("@turf/invariant");
@@ -38185,10 +38222,9 @@ module.exports = function(targetPoint, points){
 var L = require("leaflet"),
   PathFinder = require("geojson-path-finder").default,
   util = require("./util"),
-  genczml = require("./genczml"),
   nearest = require("turf-nearest"),
   distance = require("@turf/distance").default,
-  {point, lineString} = require("@turf/helpers"),
+  {point} = require("@turf/helpers"),
   featurecollection = require("turf-featurecollection");
 
 require("leaflet-routing-machine");
@@ -38308,24 +38344,12 @@ module.exports = L.Class.extend({
     }, 0);
 
     //console.log('find route result', legs);
-    console.log('GeoJSON LineString',
-      lineString(Array.prototype.concat.apply(
-        [],
-        legs.map(function (l) {
-          return l.path;
-        })
-      )));
-    console.log('CZML', genczml.genczml({
-      path: Array.prototype.concat.apply(
-        [],
-        legs.map(function (l) {
-          return l.path;
-        })
-      ),
-      gltfurl: 'https://gist.githubusercontent.com/deton/f14f9ee2040bbbd452211d7071db03b5/raw/78240fd3be9662240b947d2f19a8ac7b1f0c454e/walk.glb',
-      altitude: 2,
-      addPolyline: true,
-    }));
+    this._lastPath = Array.prototype.concat.apply(
+      [],
+      legs.map(function (l) {
+        return l.path;
+      })
+    );
 
     cb.call(context, null, [
       {
@@ -38350,7 +38374,7 @@ module.exports = L.Class.extend({
   },
 });
 
-},{"./genczml":1,"./util":30,"@turf/distance":3,"@turf/helpers":6,"geojson-path-finder":15,"leaflet":21,"leaflet-routing-machine":19,"turf-featurecollection":25,"turf-nearest":28}],30:[function(require,module,exports){
+},{"./util":30,"@turf/distance":3,"@turf/helpers":6,"geojson-path-finder":15,"leaflet":21,"leaflet-routing-machine":19,"turf-featurecollection":25,"turf-nearest":28}],30:[function(require,module,exports){
 var L = require('leaflet');
 
 module.exports = {
