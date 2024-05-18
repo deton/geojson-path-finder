@@ -10,28 +10,49 @@ L.Icon.Default.imagePath = 'images/';
 require('leaflet.icon.glyph');
 require('leaflet-routing-machine');
 
-var map = L.map('map');
+var baseLayer = L.tileLayer('https://tile.openstreetmap.jp/styles/osm-bright/512/{z}/{x}/{y}.png', {
+    attribution: '<a href="https://www.openmaptiles.org/" target="_blank">&copy; OpenMapTiles</a> <a href="https://www.openstreetmap.org/copyright" target="_blank">&copy; OpenStreetMap contributors</a>'
+});
+var map = L.map('map', {
+    layers: [baseLayer]
+});
+var layerControl = L.control.layers(
+    { 'osm-bright': baseLayer }, null, { position: 'bottomright'}
+).addTo(map);
 
-L.tileLayer('https://tile.openstreetmap.jp/styles/osm-bright/512/{z}/{x}/{y}.png', {
-        attribution: '<a href="https://www.openmaptiles.org/" target="_blank">&copy; OpenMapTiles</a> <a href="https://www.openstreetmap.org/copyright" target="_blank">&copy; OpenStreetMap contributors</a>'
-    })
-    .addTo(map);
+const urlParams = new URLSearchParams(document.location.search);
+const networkjson = urlParams.get('networkjson');
+// waypointLatLng=35.6983,139.7725&waypointLatLng=35.6994,139.7700
+let waypointParam = urlParams.getAll('waypointLatLng');
+if (!networkjson && waypointParam.length === 0) {
+    // default waypoints for default network.json
+    waypointParam = ['35.6983,139.7725', '35.6994,139.7700'];
+}
+// [[35.6983, 139.7725], [35.6994, 139.7700]]
+const waypoints = waypointParam.map(latLngStr => latLngStr.split(','))
+    .map(latLngArray => latLngArray.map(s => Number(s)));
+fetch(networkjson || 'network.geojson')
+    .then(resp => resp.json())
+    .then(json => initialize(json, waypoints))
+    .catch(err => {
+        alert('Could not load routing network :( HTTP ' + err.message);
+    });
 
-var xhr = new XMLHttpRequest();
-xhr.onload = function() {
-    if (xhr.status === 200) {
-        setTimeout(function() {
-            initialize(JSON.parse(xhr.responseText));
-        });
+var control;
+var networkLayer;
+function initialize(network, waypoints) {
+    if (networkLayer) {
+        layerControl.removeLayer(networkLayer);
     }
-    else {
-        alert('Could not load routing network :( HTTP ' + xhr.status);
+    if (control) {
+        control.remove();
     }
-};
-xhr.open('GET', 'network.json');
-xhr.send();
+    map.eachLayer(layer => {
+        if (layer !== baseLayer) {
+            map.removeLayer(layer)
+        }
+    });
 
-function initialize(network) {
     var bbox = extent(network);
     console.log('bbox', bbox);
     var bounds = L.latLngBounds([bbox[1], bbox[0]], [bbox[3], bbox[2]]);
@@ -39,23 +60,21 @@ function initialize(network) {
 
     L.rectangle(bounds, {color: 'orange', weight: 1, fillOpacity: 0.03, interactive: false}).addTo(map);
 
-    var router = new Router(network),
-        control = L.Routing.control({
-            createMarker: function(i, wp) {
-                return L.marker(wp.latLng, {
-                    icon: L.icon.glyph({ prefix: '', glyph: String.fromCharCode(65 + i) }),
-                    draggable: true
-                })
-            },
-            router: router,
-            routeWhileDragging: true,
-            routeDragInterval: 100
-        }).addTo(map);
-
-    control.setWaypoints([
-        [35.6983, 139.7725],
-        [35.6994, 139.7700],
-    ]);
+    var router = new Router(network);
+    control = L.Routing.control({
+        createMarker: function(i, wp) {
+            return L.marker(wp.latLng, {
+                icon: L.icon.glyph({ prefix: '', glyph: String.fromCharCode(65 + i) }),
+                draggable: true
+            })
+        },
+        router: router,
+        routeWhileDragging: true,
+        routeDragInterval: 100
+    }).addTo(map);
+    if (waypoints) {
+        control.setWaypoints(waypoints);
+    }
 
     var totalDistance = network.features.reduce(function(total, feature) {
             if (feature.geometry.type === 'LineString') {
@@ -82,8 +101,8 @@ function initialize(network) {
         li.innerHTML = info[0] + ': <strong>' + Math.round(info[1]) + (info[2] ? '&nbsp;' + info[2] : '') + '</strong>';
     });
 
-    var networkLayer = L.layerGroup(),
-        vertices = router._pathFinder.graph.sourceCoordinates,
+    networkLayer = L.layerGroup();
+    var vertices = router._pathFinder.graph.sourceCoordinates,
         renderer = L.canvas().addTo(map);
     nodeNames.forEach(function(nodeName) {
         var node = graph[nodeName];
@@ -95,21 +114,20 @@ function initialize(network) {
                 .bringToBack();
         });
     });
-
-    L.control.layers(null, {
-        'Routing Network': networkLayer
-    }, { position: 'bottomright'}).addTo(map);
+    layerControl.addOverlay(networkLayer, 'Routing Network');
 
     const exportGeojsonElem = document.getElementById("exportGeojson");
-    exportGeojsonElem.addEventListener("click", () => {
+    exportGeojsonElem.addEventListener("click", exportGeojson);
+    function exportGeojson() {
         const path = getPath();
         console.log('GeoJSON LineString', lineString(path));
         exportGeojsonElem.href = 'data:application/json,' + encodeURIComponent(JSON.stringify(lineString(path)));
         exportGeojsonElem.download = 'path.geojson';
-    });
+    }
 
     const exportCzmlElem = document.getElementById("exportCzml");
-    exportCzmlElem.addEventListener("click", () => {
+    exportCzmlElem.addEventListener("click", exportCzml);
+    function exportCzml() {
         const path = getPath();
         const height = +document.getElementById("czmlHeight").value;
         const czml = genczml.genczml({
@@ -121,7 +139,7 @@ function initialize(network) {
         console.log('CZML', czml);
         exportCzmlElem.href = 'data:application/json,' + encodeURIComponent(JSON.stringify(czml));
         exportCzmlElem.download = 'path.czml';
-    });
+    }
 
     function getPath() {
         // add origin and dest that may not on network.json
@@ -135,3 +153,41 @@ function initialize(network) {
         ];
     }
 }
+
+const fileInput = document.getElementById("fileElem");
+fileElem.addEventListener("change", () => {
+  const [file] = fileElem.files;
+  if (file) {
+    file.text().then(text => initialize(JSON.parse(text))).catch(console.error);
+  }
+  //fileElem.value = '';
+});
+
+// https://www.liedman.net/leaflet-routing-machine/tutorials/interaction/
+function createButton(label, container) {
+    var btn = L.DomUtil.create('button', '', container);
+    btn.setAttribute('type', 'button');
+    btn.innerHTML = label;
+    return btn;
+}
+
+map.on('click', function(e) {
+    var container = L.DomUtil.create('div'),
+        startBtn = createButton('Start from this location', container),
+        destBtn = createButton('Go to this location', container);
+
+    L.DomEvent.on(startBtn, 'click', function() {
+        control.spliceWaypoints(0, 1, e.latlng);
+        map.closePopup();
+    });
+
+    L.DomEvent.on(destBtn, 'click', function() {
+        control.spliceWaypoints(control.getWaypoints().length - 1, 1, e.latlng);
+        map.closePopup();
+    });
+
+    L.popup()
+        .setContent(container)
+        .setLatLng(e.latlng)
+        .openOn(map);
+});

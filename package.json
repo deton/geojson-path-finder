@@ -22,7 +22,8 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "postinstall": "cp -a node_modules/leaflet/dist/images . && cp -a node_modules/leaflet/dist/leaflet.css . && cp -a node_modules/leaflet-routing-machine/dist/leaflet-routing-machine.css . && browserify index.js >bundle.js"
+    "postinstall": "cp -a node_modules/leaflet/dist/images . && cp -a node_modules/leaflet/dist/leaflet.css . && cp -a node_modules/leaflet-routing-machine/dist/leaflet-routing-machine.css . && browserify index.js >bundle.js",
+    "bundle": "browserify index.js >bundle.js"
   },
   "repository": {
     "type": "git",
