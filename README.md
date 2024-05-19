@@ -11,4 +11,6 @@ Modified [GeoJSON Path Finder demo](https://deton.github.io/geojson-path-finder/
 * `networkjson`: URL of network.geojson file.
   * Example: `networkjson=https://gist.githubusercontent.com/deton/c030eae2af830364580727a291913f8e/raw/f1ab3e649e2bde20c6be67ec5be2d3c0f467e040/network-shibuya.geojson`
 * `waypointLatLng`: Waypoints (origin, destination, etc.)
-  * Example: `waypointLatLng=35.6983,139.7725&waypointLatLng=35.6994,139.7700`
+  * Example: `waypointLatLng=35.6590,139.7011&waypointLatLng=35.65956,139.6998&waypointLatLng=35.6601,139.6956`
+
+* Example: https://deton.github.io/geojson-path-finder/?networkjson=https://gist.githubusercontent.com/deton/c030eae2af830364580727a291913f8e/raw/f1ab3e649e2bde20c6be67ec5be2d3c0f467e040/network-shibuya.geojson&waypointLatLng=35.6590,139.7011&waypointLatLng=35.65956,139.6998&waypointLatLng=35.6601,139.6956

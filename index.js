@@ -144,6 +144,24 @@ function initialize(network, waypoints) {
     function getPath() {
         // add origin and dest that may not on network.json
         const waypoints = control.getWaypoints();
+
+        // TODO: add waypoints to exported geojson.
+        // to check intermediate waypoints
+        const wpCoords = waypoints.map(x => [x.latLng.lng, x.latLng.lat]);
+        console.log('waypoints', {
+            type: 'FeatureCollection',
+            features: [{
+                type: 'Feature',
+                properties: {
+                    id: 'waypoints',
+                },
+                geometry: {
+                    type: 'MultiPoint',
+                    coordinates: wpCoords,
+                }
+            }]
+        });
+
         const origin = waypoints[0];
         const dest = waypoints.at(-1);
         return [
