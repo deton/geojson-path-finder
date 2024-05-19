@@ -146,7 +146,7 @@ function initialize(network, waypoints) {
         }
     });
 
-    var bbox = extent(network);
+    var bbox = network.metaData && network.metaData.generatingBbox || extent(network);
     console.log('bbox', bbox);
     var bounds = L.latLngBounds([bbox[1], bbox[0]], [bbox[3], bbox[2]]);
     map.fitBounds(bounds);
