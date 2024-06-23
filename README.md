@@ -9,12 +9,13 @@ Modified [GeoJSON Path Finder demo](https://deton.github.io/geojson-path-finder/
 ## URL Parameters
 
 * `networkjson`: URL of network.geojson file.
-  * Example: `networkjson=https://gist.githubusercontent.com/deton/c030eae2af830364580727a291913f8e/raw/f1ab3e649e2bde20c6be67ec5be2d3c0f467e040/network-shibuya.geojson`
+  * Example: `networkjson=https://gist.githubusercontent.com/deton/c030eae2af830364580727a291913f8e/raw/28913a796a5ecad82b5990ed10c6d9b5c981c4a1/network-shibuya.geojson`
+
 * `waypointLatLng`: Waypoints (origin, destination, etc.)
   * Example: `waypointLatLng=35.6590,139.7011&waypointLatLng=35.65956,139.6998&waypointLatLng=35.6601,139.6956`
 
-* Example: https://deton.github.io/geojson-path-finder/?networkjson=https://gist.githubusercontent.com/deton/c030eae2af830364580727a291913f8e/raw/f1ab3e649e2bde20c6be67ec5be2d3c0f467e040/network-shibuya.geojson&waypointLatLng=35.6590,139.7011&waypointLatLng=35.65956,139.6998&waypointLatLng=35.6601,139.6956
+* Example: https://deton.github.io/geojson-path-finder/?networkjson=https://gist.githubusercontent.com/deton/c030eae2af830364580727a291913f8e/raw/28913a796a5ecad82b5990ed10c6d9b5c981c4a1/network-shibuya.geojson&waypointLatLng=35.6590,139.7011&waypointLatLng=35.65956,139.6998&waypointLatLng=35.6601,139.6956
 
 ## Generate network.geojson using OpenStreetMap data
 * [GraphFromOSM](https://github.com/deton/GraphFromOSM)
-  * Example: https://deton.github.io/GraphFromOSM/?bbox=139.69543755054477,35.65887407735725,139.7011882066727,35.66062621586084
+  * Example: https://deton.github.io/GraphFromOSM/?bbox=139.6954429149628,35.65743572597212,139.70327496528628,35.66243933363614
