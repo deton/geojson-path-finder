@@ -82,6 +82,7 @@ function modelpos2polyline(czml1) {
   return {
     id: `polyline-${czml1.id}`,
     polyline: {
+      show: true,
       clampToGround: true,
       positions: {
         cartographicDegrees: czml1.position.cartographicDegrees.filter((x, idx) => idx % 4 !== 0)
@@ -95,7 +96,7 @@ var L = require('leaflet'),
     Router = require('./router'),
     genczml = require("./genczml"),
     extent = require('turf-extent'),
-    {lineString} = require("@turf/helpers"),
+    {featureCollection, lineString, multiPoint} = require("@turf/helpers"),
     lineDistance = require('@turf/line-distance');
 
 L.Icon.Default.imagePath = 'images/';
@@ -212,9 +213,12 @@ function initialize(network, waypoints) {
     const exportGeojsonElem = document.getElementById("exportGeojson");
     exportGeojsonElem.addEventListener("click", exportGeojson);
     function exportGeojson() {
-        const path = getPath();
-        console.log('GeoJSON LineString', lineString(path));
-        exportGeojsonElem.href = 'data:application/json,' + encodeURIComponent(JSON.stringify(lineString(path)));
+        const path = lineString(getPath());
+        // add waypoints to check intermediate waypoints
+        const wpoints = multiPoint(getWaypoints());
+        const geojson = featureCollection([path, wpoints]);
+        console.log('GeoJSON', geojson);
+        exportGeojsonElem.href = 'data:application/json,' + encodeURIComponent(JSON.stringify(geojson));
         exportGeojsonElem.download = 'path.geojson';
     }
 
@@ -237,24 +241,6 @@ function initialize(network, waypoints) {
     function getPath() {
         // add origin and dest that may not on network.json
         const waypoints = control.getWaypoints();
-
-        // TODO: add waypoints to exported geojson.
-        // to check intermediate waypoints
-        const wpCoords = waypoints.map(x => [x.latLng.lng, x.latLng.lat]);
-        console.log('waypoints', {
-            type: 'FeatureCollection',
-            features: [{
-                type: 'Feature',
-                properties: {
-                    id: 'waypoints',
-                },
-                geometry: {
-                    type: 'MultiPoint',
-                    coordinates: wpCoords,
-                }
-            }]
-        });
-
         const origin = waypoints[0];
         const dest = waypoints.at(-1);
         return [
@@ -262,6 +248,11 @@ function initialize(network, waypoints) {
             ...router._lastPath,
             [dest.latLng.lng, dest.latLng.lat]
         ];
+    }
+
+    function getWaypoints() {
+        const waypoints = control.getWaypoints();
+        return waypoints.map(x => [x.latLng.lng, x.latLng.lat]);
     }
 }
 

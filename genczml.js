@@ -81,6 +81,7 @@ function modelpos2polyline(czml1) {
   return {
     id: `polyline-${czml1.id}`,
     polyline: {
+      show: true,
       clampToGround: true,
       positions: {
         cartographicDegrees: czml1.position.cartographicDegrees.filter((x, idx) => idx % 4 !== 0)
