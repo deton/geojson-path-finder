@@ -2,13 +2,15 @@ var L = require('leaflet'),
     Router = require('./router'),
     genczml = require("./genczml"),
     extent = require('turf-extent'),
-    {featureCollection, lineString, multiPoint} = require("@turf/helpers"),
+    {featureCollection, lineString, point} = require("@turf/helpers"),
     lineDistance = require('@turf/line-distance');
 
 L.Icon.Default.imagePath = 'images/';
 
 require('leaflet.icon.glyph');
 require('leaflet-routing-machine');
+require('leaflet-control-geocoder');
+var OpenLocationCode = require('open-location-code').OpenLocationCode;
 
 var baseLayer = L.tileLayer('https://tile.openstreetmap.jp/styles/osm-bright/512/{z}/{x}/{y}.png', {
     attribution: '<a href="https://www.openmaptiles.org/" target="_blank">&copy; OpenMapTiles</a> <a href="https://www.openstreetmap.org/copyright" target="_blank">&copy; OpenStreetMap contributors</a>'
@@ -30,7 +32,7 @@ if (!networkjson && waypointParam.length === 0) {
 }
 // [[35.6983, 139.7725], [35.6994, 139.7700]]
 const waypoints = waypointParam.map(latLngStr => latLngStr.split(','))
-    .map(latLngArray => latLngArray.map(s => Number(s)));
+    .map(latLngArray => latLngArray.map(Number));
 fetch(networkjson || 'network.geojson')
     .then(resp => resp.json())
     .then(json => initialize(json, waypoints))
@@ -62,12 +64,21 @@ function initialize(network, waypoints) {
 
     var router = new Router(network);
     control = L.Routing.control({
-        createMarker: function(i, wp) {
-            return L.marker(wp.latLng, {
-                icon: L.icon.glyph({ prefix: '', glyph: String.fromCharCode(65 + i) }),
-                draggable: true
-            })
-        },
+        plan: L.Routing.plan([], {
+            createMarker: function(i, wp) {
+                return L.marker(wp.latLng, {
+                    icon: L.icon.glyph({ prefix: '', glyph: String.fromCharCode(65 + i) }),
+                    draggable: true
+                })
+            },
+            //geocoder: L.Control.Geocoder.latLng(),
+            geocoder: L.Control.Geocoder.openLocationCode({
+                OpenLocationCode: new OpenLocationCode(),
+            }),
+            reverseWaypoints: true,
+            routeWhileDragging: true,
+            //addWaypoints: false, // disable geocoding
+        }),
         router: router,
         routeWhileDragging: true,
         routeDragInterval: 100
@@ -121,8 +132,8 @@ function initialize(network, waypoints) {
     function exportGeojson() {
         const path = lineString(getPath());
         // add waypoints to check intermediate waypoints
-        const wpoints = multiPoint(getWaypoints());
-        const geojson = featureCollection([path, wpoints]);
+        const wpoints = waypointsToGeoJSON();
+        const geojson = featureCollection([path, ...wpoints]);
         console.log('GeoJSON', geojson);
         exportGeojsonElem.href = 'data:application/json,' + encodeURIComponent(JSON.stringify(geojson));
         exportGeojsonElem.download = 'path.geojson';
@@ -156,9 +167,9 @@ function initialize(network, waypoints) {
         ];
     }
 
-    function getWaypoints() {
-        const waypoints = control.getWaypoints();
-        return waypoints.map(x => [x.latLng.lng, x.latLng.lat]);
+    function waypointsToGeoJSON() {
+        const wps = control.getWaypoints();
+        return wps.map(x => point([x.latLng.lng, x.latLng.lat], {name: x.name}));
     }
 }
 
